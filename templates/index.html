@@ -1,0 +1,123 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Signup & Signin</title>
+<style>
+body { font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f6f8; }
+.container { background:#fff; padding:25px; width:350px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+input { width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:4px; }
+button { width:100%; padding:10px; background:#007bff; border:none; color:#fff; border-radius:4px; cursor:pointer; margin-top:10px; }
+button:hover { background:#0056b3; }
+.error { color:red; font-size:12px; margin-top:-5px; }
+.switch { text-align:center; margin-top:10px; cursor:pointer; color:#007bff; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2 id="title">Sign Up</h2>
+<div id="signupForm">
+  <input type="email" id="signupEmail" placeholder="Email">
+  <input type="text" id="signupUsername" placeholder="Username">
+  <input type="password" id="signupPassword" placeholder="Password">
+  <input type="password" id="signupRePassword" placeholder="Re-enter Password">
+  <div class="error" id="signupError"></div>
+  <button onclick="signup()">Sign Up</button>
+</div>
+<div id="signinForm" style="display:none;">
+  <input type="text" id="signinUser" placeholder="Email or Username">
+  <div class="error" id="userError"></div>
+  <input type="password" id="signinPassword" placeholder="Password">
+  <div class="error" id="passwordError"></div>
+  <button onclick="signin()">Sign In</button>
+</div>
+<div class="switch" onclick="toggleForm()" id="switchText">Already have an account? Sign In</div>
+</div>
+<script>
+const API_URL = "http://127.0.0.1:8000";
+
+async function signup(){
+  const payload = {
+    email: signupEmail.value.trim(),
+    username: signupUsername.value.trim(),
+    password: signupPassword.value,
+    re_password: signupRePassword.value
+  };
+  console.log('Signup payload:', payload);
+
+  const error = document.getElementById("signupError");
+  error.textContent='';
+  try{
+    const res = await fetch(`${API_URL}/signup`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if(!res.ok){
+        let msg = '';
+        if(Array.isArray(data.detail)){
+            msg = data.detail.map(e=>e.msg).join(', ');
+        } else {
+            msg = data.detail;
+        }
+        error.textContent = msg;
+        return;
+    }
+
+    alert('Signup successful! Please sign in.');
+    toggleForm();
+  } catch(err){ error.textContent='Server error'; }
+}
+
+async function signin(){
+  const payload = {
+    identifier: signinUser.value.trim(),
+    password: signinPassword.value
+  };
+  console.log('Signin payload:', payload);
+
+  const userError = document.getElementById("userError");
+  const passwordError = document.getElementById("passwordError");
+  userError.textContent=''; passwordError.textContent='';
+  try{
+    const res = await fetch(`${API_URL}/signin`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      let msg = '';
+      if(Array.isArray(data.detail)){
+          msg = data.detail.map(e=>e.msg).join(', ');
+      } else {
+          msg = data.detail;
+      }
+      if(res.status===404){ userError.textContent=msg; }
+      else { passwordError.textContent=msg; }
+      return;
+    }
+
+    alert('Signin successful!');
+  }catch(err){ passwordError.textContent='Server error';}
+}
+
+function toggleForm(){
+  const signup = document.getElementById('signupForm');
+  const signin = document.getElementById('signinForm');
+  const title = document.getElementById('title');
+  const switchText = document.getElementById('switchText');
+  if(signup.style.display==='none'){
+    signup.style.display='block'; signin.style.display='none'; title.textContent='Sign Up'; switchText.textContent='Already have an account? Sign In';
+  } else {
+    signup.style.display='none'; signin.style.display='block'; title.textContent='Sign In'; switchText.textContent="Don't have an account? Sign Up";
+  }
+}
+</script>
+</body>
+</html>
